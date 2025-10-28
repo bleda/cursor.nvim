@@ -1,0 +1,22 @@
+local cursor = require("cursor")
+
+describe("setup", function()
+  it("works with default config", function()
+    cursor.setup()
+    assert(cursor.config.cursor_cmd == "cursor", "cursor_cmd should default to 'cursor'")
+  end)
+
+  it("works with custom config", function()
+    cursor.setup({ cursor_cmd = "/custom/path/cursor" })
+    assert(cursor.config.cursor_cmd == "/custom/path/cursor", "cursor_cmd should be customizable")
+  end)
+end)
+
+describe("context placeholders", function()
+  it("has default context extractors", function()
+    assert(cursor.config.contexts["@buffer"] ~= nil, "@buffer context should exist")
+    assert(cursor.config.contexts["@cursor"] ~= nil, "@cursor context should exist")
+    assert(cursor.config.contexts["@selection"] ~= nil, "@selection context should exist")
+    assert(cursor.config.contexts["@this"] ~= nil, "@this context should exist")
+  end)
+end)

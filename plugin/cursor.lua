@@ -1,0 +1,3 @@
+-- Cursor Neovim Integration Plugin
+-- Users should call require("cursor").setup() in their config
+-- and set up keybindings as shown in the README
