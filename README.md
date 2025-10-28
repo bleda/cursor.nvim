@@ -1,47 +1,80 @@
-# A Neovim Plugin Template
+# Cursor Neovim Integration
 
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/ellisonleao/nvim-plugin-template/lint-test.yml?branch=main&style=for-the-badge)
-![Lua](https://img.shields.io/badge/Made%20with%20Lua-blueviolet.svg?style=for-the-badge&logo=lua)
+A Neovim plugin that integrates with Cursor CLI to provide AI assistance directly within Neovim.
 
-A template repository for Neovim plugins.
+## Features
 
-## Using it
+- **Floating Window Prompt**: `<leader>oc` opens a floating window for user input
+- **Context-Aware**: Automatically includes selected text (visual mode) or current line (normal mode) as context
+- **Split Window Agent**: `<leader>oC` opens Cursor agent in a split window
+- **Seamless Integration**: Works with Cursor CLI to provide AI assistance
 
-Via `gh`:
+## Installation
 
+### Prerequisites
+
+- Neovim 0.7+
+- Cursor CLI installed and available in PATH
+
+### Install Cursor CLI
+
+If you don't have Cursor CLI installed:
+
+```bash
+# Install Cursor CLI (if not already installed)
+# Visit https://cursor.com/download and install Cursor IDE
+# The CLI should be available after installation
 ```
-$ gh repo create my-plugin -p ellisonleao/nvim-plugin-template
+
+### Install the Plugin
+
+Using your favorite plugin manager:
+
+```lua
+-- Using lazy.nvim
+{
+  "your-username/cursor.nvim",
+  config = function()
+    require("plugin_name").setup({
+      leader_key = "<leader>", -- default leader key
+      cursor_cmd = "cursor",   -- path to cursor command
+    })
+  end
+}
 ```
 
-Via github web page:
+## Usage
 
-Click on `Use this template`
+### Keybindings
 
-![](https://docs.github.com/assets/cb-36544/images/help/repository/use-this-template-button.png)
+- `<leader>oc` - Show floating window prompt with context
+  - In normal mode: includes current line as context
+  - In visual mode: includes selected text as context
+- `<leader>oC` - Open Cursor agent in split window
 
-## Features and structure
+### Configuration
 
-- 100% Lua
-- Github actions for:
-  - running tests using [plenary.nvim](https://github.com/nvim-lua/plenary.nvim) and [busted](https://olivinelabs.com/busted/)
-  - check for formatting errors (Stylua)
-  - vimdocs autogeneration from README.md file
-  - luarocks release (LUAROCKS_API_KEY secret configuration required)
-
-### Plugin structure
-
+```lua
+require("plugin_name").setup({
+  leader_key = "<leader>", -- Your leader key
+  cursor_cmd = "cursor",   -- Path to cursor command (default: "cursor")
+})
 ```
-.
-├── lua
-│   ├── plugin_name
-│   │   └── module.lua
-│   └── plugin_name.lua
-├── Makefile
-├── plugin
-│   └── plugin_name.lua
-├── README.md
-├── tests
-│   ├── minimal_init.lua
-│   └── plugin_name
-│       └── plugin_name_spec.lua
-```
+
+## How it Works
+
+1. **Context Detection**: The plugin automatically detects whether you're in normal or visual mode
+2. **Floating Window**: When you press `<leader>oc`, a floating window appears for input
+3. **Context Inclusion**: Your selected text or current line is automatically included as context
+4. **Cursor Integration**: The prompt and context are sent to Cursor agent via CLI
+5. **Split Window**: Cursor agent opens in a split window for interaction
+
+## Requirements
+
+- Neovim 0.7+
+- Cursor CLI available in PATH
+- Terminal support in Neovim
+
+## License
+
+MIT

@@ -1,1 +1,5 @@
-vim.api.nvim_create_user_command("MyFirstFunction", require("plugin_name").hello, {})
+-- Cursor Neovim Integration Plugin
+local cursor = require("plugin_name")
+
+-- Set up the plugin when loaded
+cursor.setup()
