@@ -77,14 +77,20 @@ end
 local function on_cursor_agent_exit(job_id, exit_code, event)
   -- Find the window associated with this job
   for _, win in ipairs(vim.api.nvim_list_wins()) do
-    local buf = vim.api.nvim_win_get_buf(win)
-    if vim.api.nvim_buf_get_option(buf, "buftype") == "terminal" then
-      local buf_job_id = vim.api.nvim_buf_get_var(buf, "terminal_job_id")
-      if buf_job_id == job_id then
-        -- Close the window and delete the buffer
-        vim.api.nvim_win_close(win, true)
-        vim.api.nvim_buf_delete(buf, { force = true })
-        break
+    if vim.api.nvim_win_is_valid(win) then
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.api.nvim_buf_is_valid(buf) and vim.api.nvim_buf_get_option(buf, "buftype") == "terminal" then
+        local ok, buf_job_id = pcall(vim.api.nvim_buf_get_var, buf, "terminal_job_id")
+        if ok and buf_job_id == job_id then
+          -- Close the window and delete the buffer
+          if vim.api.nvim_win_is_valid(win) then
+            pcall(vim.api.nvim_win_close, win, true)
+          end
+          if vim.api.nvim_buf_is_valid(buf) then
+            pcall(vim.api.nvim_buf_delete, buf, { force = true })
+          end
+          break
+        end
       end
     end
   end
