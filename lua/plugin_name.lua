@@ -24,18 +24,20 @@ end
 ---Get the current context based on mode
 ---@return string context The context to send to cursor
 local function get_context()
-  local mode = vim.fn.mode()
   local file_path = vim.api.nvim_buf_get_name(0)
   
   -- Get relative path from current working directory
   local cwd = vim.fn.getcwd()
   local relative_path = vim.fn.fnamemodify(file_path, ":.")
   
-  if mode == "v" or mode == "V" or mode == "\22" then -- visual mode
-    local start_line = vim.fn.getpos("'<")[2]
-    local end_line = vim.fn.getpos("'>")[2]
+  -- Check if there's a visual selection by comparing marks
+  local start_line = vim.fn.getpos("'<")[2]
+  local end_line = vim.fn.getpos("'>")[2]
+  
+  -- If marks are valid and different, use range
+  if start_line > 0 and end_line > 0 and start_line ~= end_line then
     return string.format("@%s:%d-%d", relative_path, start_line, end_line)
-  else -- normal mode
+  else -- normal mode or single line
     local current_line = vim.api.nvim_win_get_cursor(0)[1]
     return string.format("@%s:%d", relative_path, current_line)
   end
@@ -219,7 +221,11 @@ end
 ---Set up keybindings
 M.setup_keybindings = function()
   vim.keymap.set("n", M.config.leader_key .. "oc", M.show_cursor_prompt, { desc = "Show Cursor prompt with context" })
-  vim.keymap.set("v", M.config.leader_key .. "oc", M.show_cursor_prompt, { desc = "Show Cursor prompt with selection" })
+  vim.keymap.set("v", M.config.leader_key .. "oc", function()
+    -- Exit visual mode first to ensure marks are set
+    vim.cmd('normal! ')
+    M.show_cursor_prompt()
+  end, { desc = "Show Cursor prompt with selection" })
   vim.keymap.set("n", M.config.leader_key .. "oC", M.open_cursor_agent, { desc = "Open Cursor agent in split" })
 end
 
