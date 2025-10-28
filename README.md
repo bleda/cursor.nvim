@@ -7,6 +7,7 @@ A Neovim plugin that integrates with Cursor CLI to provide AI assistance directl
 - **Floating Window Prompt**: `<leader>oc` opens a floating window for user input
 - **Context-Aware**: Automatically includes file references with line numbers (visual mode) or current line (normal mode) as context
 - **Smart Tab Reuse**: Reuses existing Cursor agent tab instead of creating new splits
+- **Auto-Close**: Automatically closes the tab when Cursor agent process exits
 - **Split Window Agent**: `<leader>oC` opens Cursor agent in a split window
 - **Seamless Integration**: Works with Cursor CLI to provide AI assistance
 
@@ -68,8 +69,9 @@ require("plugin_name").setup({
 2. **Floating Window**: When you press `<leader>oc`, a floating window appears for input
 3. **Context Inclusion**: File references with line numbers are automatically included as context (e.g., `@file.lua:10-15`)
 4. **Smart Reuse**: If a Cursor agent tab is already open, it reuses that tab instead of creating a new one
-5. **Cursor Integration**: The prompt and file reference are sent to Cursor agent via CLI
-6. **Split Window**: Cursor agent opens in a split window for interaction
+5. **Auto-Close**: The tab automatically closes when the Cursor agent process exits
+6. **Cursor Integration**: The prompt and file reference are sent to Cursor agent via CLI
+7. **Split Window**: Cursor agent opens in a split window for interaction
 
 ## Requirements
 

@@ -68,6 +68,26 @@ local function find_cursor_agent_window()
   return nil
 end
 
+---Handle terminal job exit - close the window when Cursor agent exits
+---@param job_id number The job ID that exited
+---@param exit_code number The exit code
+---@param event string The event type
+local function on_cursor_agent_exit(job_id, exit_code, event)
+  -- Find the window associated with this job
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    if vim.api.nvim_buf_get_option(buf, "buftype") == "terminal" then
+      local buf_job_id = vim.api.nvim_buf_get_var(buf, "terminal_job_id")
+      if buf_job_id == job_id then
+        -- Close the window and delete the buffer
+        vim.api.nvim_win_close(win, true)
+        vim.api.nvim_buf_delete(buf, { force = true })
+        break
+      end
+    end
+  end
+end
+
 ---Show floating window for user input
 M.show_cursor_prompt = function()
   local width = 50
@@ -168,8 +188,10 @@ M.send_to_cursor = function(prompt)
       title_pos = "center",
     })
     
-    -- Start cursor agent with the prompt
-    vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(full_prompt))
+    -- Start cursor agent with the prompt and exit callback
+    vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(full_prompt), {
+      on_exit = on_cursor_agent_exit
+    })
     vim.cmd("startinsert")
   end
 end
@@ -189,8 +211,10 @@ M.open_cursor_agent = function()
     title_pos = "center",
   })
   
-  -- Start cursor agent
-  vim.fn.termopen(M.config.cursor_cmd .. " agent")
+  -- Start cursor agent with exit callback
+  vim.fn.termopen(M.config.cursor_cmd .. " agent", {
+    on_exit = on_cursor_agent_exit
+  })
   vim.cmd("startinsert")
 end
 
