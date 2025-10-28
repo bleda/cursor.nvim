@@ -171,7 +171,7 @@ M.send_to_cursor = function(prompt)
     local buf = vim.api.nvim_win_get_buf(existing_win)
     
     -- Send the new prompt to the existing terminal
-    vim.api.nvim_chan_send(vim.api.nvim_buf_get_var(buf, "terminal_job_id"), full_prompt .. "\n")
+    vim.api.nvim_chan_send(vim.api.nvim_buf_get_var(buf, "terminal_job_id"), full_prompt .. "\r")
     vim.cmd("startinsert")
   else
     -- Open a new terminal buffer and run cursor agent
