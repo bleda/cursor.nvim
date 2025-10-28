@@ -25,16 +25,47 @@ end
 ---@return string context The context to send to cursor
 local function get_context()
   local mode = vim.fn.mode()
+  local file_path = vim.api.nvim_buf_get_name(0)
+  
+  -- Get relative path from current working directory
+  local cwd = vim.fn.getcwd()
+  local relative_path = vim.fn.fnamemodify(file_path, ":.")
   
   if mode == "v" or mode == "V" or mode == "\22" then -- visual mode
     local start_line = vim.fn.getpos("'<")[2]
     local end_line = vim.fn.getpos("'>")[2]
-    local lines = vim.api.nvim_buf_get_lines(0, start_line - 1, end_line, false)
-    return table.concat(lines, "\n")
+    return string.format("@%s:%d-%d", relative_path, start_line, end_line)
   else -- normal mode
-    local current_line = vim.api.nvim_get_current_line()
-    return current_line
+    local current_line = vim.api.nvim_win_get_cursor(0)[1]
+    return string.format("@%s:%d", relative_path, current_line)
   end
+end
+
+---Check if there's already a Cursor agent window open
+---@return number|nil win_id The window ID if found, nil otherwise
+local function find_cursor_agent_window()
+  for _, win in ipairs(vim.api.nvim_list_wins()) do
+    local buf = vim.api.nvim_win_get_buf(win)
+    local buf_name = vim.api.nvim_buf_get_name(buf)
+    local title = vim.api.nvim_win_get_config(win).title
+    
+    -- Check if this is a terminal buffer with cursor agent
+    if vim.api.nvim_buf_get_option(buf, "buftype") == "terminal" then
+      -- Check if the terminal is running cursor agent
+      local job_id = vim.api.nvim_buf_get_var(buf, "terminal_job_id")
+      if job_id then
+        local cmd = vim.fn.jobpid(job_id)
+        if cmd and cmd > 0 then
+          -- Check if the process is still running and likely cursor agent
+          local process_name = vim.fn.system("ps -p " .. cmd .. " -o comm= 2>/dev/null"):gsub("%s+", "")
+          if process_name:match("cursor") then
+            return win
+          end
+        end
+      end
+    end
+  end
+  return nil
 end
 
 ---Show floating window for user input
@@ -109,25 +140,38 @@ end
 ---@param prompt string The user's prompt
 M.send_to_cursor = function(prompt)
   local context = get_context()
-  local full_prompt = string.format("Context:\n%s\n\nPrompt: %s", context, prompt)
+  local full_prompt = string.format("%s %s", context, prompt)
   
-  -- Open a new terminal buffer and run cursor agent
-  vim.cmd("vsplit")
-  local term_buf = vim.api.nvim_create_buf(false, true)
-  local term_win = vim.api.nvim_open_win(term_buf, true, {
-    relative = "editor",
-    row = 0,
-    col = math.floor(vim.o.columns / 2),
-    width = math.floor(vim.o.columns / 2),
-    height = vim.o.lines,
-    border = "rounded",
-    title = "Cursor Agent",
-    title_pos = "center",
-  })
+  -- Check if there's already a Cursor agent window open
+  local existing_win = find_cursor_agent_window()
   
-  -- Start cursor agent with the prompt
-  vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(full_prompt))
-  vim.cmd("startinsert")
+  if existing_win then
+    -- Reuse existing window
+    vim.api.nvim_set_current_win(existing_win)
+    local buf = vim.api.nvim_win_get_buf(existing_win)
+    
+    -- Send the new prompt to the existing terminal
+    vim.api.nvim_chan_send(vim.api.nvim_buf_get_var(buf, "terminal_job_id"), full_prompt .. "\n")
+    vim.cmd("startinsert")
+  else
+    -- Open a new terminal buffer and run cursor agent
+    vim.cmd("vsplit")
+    local term_buf = vim.api.nvim_create_buf(false, true)
+    local term_win = vim.api.nvim_open_win(term_buf, true, {
+      relative = "editor",
+      row = 0,
+      col = math.floor(vim.o.columns / 2),
+      width = math.floor(vim.o.columns / 2),
+      height = vim.o.lines,
+      border = "rounded",
+      title = "Cursor Agent",
+      title_pos = "center",
+    })
+    
+    -- Start cursor agent with the prompt
+    vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(full_prompt))
+    vim.cmd("startinsert")
+  end
 end
 
 ---Open cursor agent in split window

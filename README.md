@@ -5,7 +5,8 @@ A Neovim plugin that integrates with Cursor CLI to provide AI assistance directl
 ## Features
 
 - **Floating Window Prompt**: `<leader>oc` opens a floating window for user input
-- **Context-Aware**: Automatically includes selected text (visual mode) or current line (normal mode) as context
+- **Context-Aware**: Automatically includes file references with line numbers (visual mode) or current line (normal mode) as context
+- **Smart Tab Reuse**: Reuses existing Cursor agent tab instead of creating new splits
 - **Split Window Agent**: `<leader>oC` opens Cursor agent in a split window
 - **Seamless Integration**: Works with Cursor CLI to provide AI assistance
 
@@ -48,8 +49,8 @@ Using your favorite plugin manager:
 ### Keybindings
 
 - `<leader>oc` - Show floating window prompt with context
-  - In normal mode: includes current line as context
-  - In visual mode: includes selected text as context
+  - In normal mode: includes current line reference as context
+  - In visual mode: includes selected line range reference as context
 - `<leader>oC` - Open Cursor agent in split window
 
 ### Configuration
@@ -65,9 +66,10 @@ require("plugin_name").setup({
 
 1. **Context Detection**: The plugin automatically detects whether you're in normal or visual mode
 2. **Floating Window**: When you press `<leader>oc`, a floating window appears for input
-3. **Context Inclusion**: Your selected text or current line is automatically included as context
-4. **Cursor Integration**: The prompt and context are sent to Cursor agent via CLI
-5. **Split Window**: Cursor agent opens in a split window for interaction
+3. **Context Inclusion**: File references with line numbers are automatically included as context (e.g., `@file.lua:10-15`)
+4. **Smart Reuse**: If a Cursor agent tab is already open, it reuses that tab instead of creating a new one
+5. **Cursor Integration**: The prompt and file reference are sent to Cursor agent via CLI
+6. **Split Window**: Cursor agent opens in a split window for interaction
 
 ## Requirements
 
