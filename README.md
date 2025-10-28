@@ -35,7 +35,7 @@ Using [lazy.nvim](https://github.com/folke/lazy.nvim):
 
 ```lua
 {
-  "your-username/cursor.nvim",
+  "bleda/cursor.nvim",
   config = function()
     require("cursor").setup()
     
