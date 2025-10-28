@@ -175,7 +175,6 @@ M.send_to_cursor = function(prompt)
     vim.cmd("startinsert")
   else
     -- Open a new terminal buffer and run cursor agent
-    vim.cmd("vsplit")
     local term_buf = vim.api.nvim_create_buf(false, true)
     local term_win = vim.api.nvim_open_win(term_buf, true, {
       relative = "editor",
@@ -198,7 +197,6 @@ end
 
 ---Open cursor agent in split window
 M.open_cursor_agent = function()
-  vim.cmd("vsplit")
   local term_buf = vim.api.nvim_create_buf(false, true)
   local term_win = vim.api.nvim_open_win(term_buf, true, {
     relative = "editor",
