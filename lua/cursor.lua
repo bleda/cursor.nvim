@@ -238,6 +238,19 @@ M.prompt = function(prompt, start_line, end_line)
     vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(rendered_prompt), {
       on_exit = on_cursor_agent_exit
     })
+    
+    -- Auto-focus on window enter: enter insert mode when switching to this window
+    vim.api.nvim_create_autocmd("WinEnter", {
+      buffer = term_buf,
+      callback = function()
+        -- Only enter insert mode if the buffer is still a terminal
+        if vim.api.nvim_buf_is_valid(term_buf) and vim.api.nvim_buf_get_option(term_buf, "buftype") == "terminal" then
+          vim.cmd("startinsert")
+        end
+      end,
+      desc = "Auto-focus cursor agent input on window enter",
+    })
+    
     vim.cmd("startinsert")
   end
 end
@@ -268,6 +281,19 @@ M.open_cursor_agent = function()
   vim.fn.termopen(M.config.cursor_cmd .. " agent", {
     on_exit = on_cursor_agent_exit
   })
+  
+  -- Auto-focus on window enter: enter insert mode when switching to this window
+  vim.api.nvim_create_autocmd("WinEnter", {
+    buffer = term_buf,
+    callback = function()
+      -- Only enter insert mode if the buffer is still a terminal
+      if vim.api.nvim_buf_is_valid(term_buf) and vim.api.nvim_buf_get_option(term_buf, "buftype") == "terminal" then
+        vim.cmd("startinsert")
+      end
+    end,
+    desc = "Auto-focus cursor agent input on window enter",
+  })
+  
   vim.cmd("startinsert")
 end
 
