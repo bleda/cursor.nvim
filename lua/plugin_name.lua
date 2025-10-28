@@ -21,23 +21,23 @@ M.setup = function(args)
   M.setup_keybindings()
 end
 
----Get the current context based on mode
+---Get the current context based on mode or provided range
+---@param start_line number? Optional start line for visual selection
+---@param end_line number? Optional end line for visual selection
 ---@return string context The context to send to cursor
-local function get_context()
+local function get_context(start_line, end_line)
   local file_path = vim.api.nvim_buf_get_name(0)
   
   -- Get relative path from current working directory
   local cwd = vim.fn.getcwd()
   local relative_path = vim.fn.fnamemodify(file_path, ":.")
   
-  -- Check if there's a visual selection by comparing marks
-  local start_line = vim.fn.getpos("'<")[2]
-  local end_line = vim.fn.getpos("'>")[2]
-  
-  -- If marks are valid and different, use range
-  if start_line > 0 and end_line > 0 and start_line ~= end_line then
+  -- If range is provided, use it
+  if start_line and end_line and start_line ~= end_line then
     return string.format("@%s:%d-%d", relative_path, start_line, end_line)
-  else -- normal mode or single line
+  elseif start_line and end_line and start_line == end_line then
+    return string.format("@%s:%d", relative_path, start_line)
+  else -- normal mode - use current cursor position
     local current_line = vim.api.nvim_win_get_cursor(0)[1]
     return string.format("@%s:%d", relative_path, current_line)
   end
@@ -91,7 +91,9 @@ local function on_cursor_agent_exit(job_id, exit_code, event)
 end
 
 ---Show floating window for user input
-M.show_cursor_prompt = function()
+---@param start_line number? Optional start line for visual selection
+---@param end_line number? Optional end line for visual selection
+M.show_cursor_prompt = function(start_line, end_line)
   local width = 50
   local height = 3
   local row = math.floor((vim.o.lines - height) / 2)
@@ -139,7 +141,7 @@ M.show_cursor_prompt = function()
     vim.api.nvim_buf_delete(buf, { force = true })
     
     if prompt and prompt ~= "" then
-      M.send_to_cursor(prompt)
+      M.send_to_cursor(prompt, start_line, end_line)
     end
   end
   
@@ -160,8 +162,10 @@ end
 
 ---Send prompt and context to cursor agent
 ---@param prompt string The user's prompt
-M.send_to_cursor = function(prompt)
-  local context = get_context()
+---@param start_line number? Optional start line for visual selection
+---@param end_line number? Optional end line for visual selection
+M.send_to_cursor = function(prompt, start_line, end_line)
+  local context = get_context(start_line, end_line)
   local full_prompt = string.format("%s %s", context, prompt)
   
   -- Check if there's already a Cursor agent window open
@@ -222,9 +226,19 @@ end
 M.setup_keybindings = function()
   vim.keymap.set("n", M.config.leader_key .. "oc", M.show_cursor_prompt, { desc = "Show Cursor prompt with context" })
   vim.keymap.set("v", M.config.leader_key .. "oc", function()
-    -- Exit visual mode first to ensure marks are set
-    vim.cmd('normal! ')
-    M.show_cursor_prompt()
+    -- Capture visual selection range while still in visual mode
+    local start_line = vim.fn.line('v')
+    local end_line = vim.fn.line('.')
+    -- Ensure start_line is always less than end_line
+    if start_line > end_line then
+      start_line, end_line = end_line, start_line
+    end
+    -- Exit visual mode
+    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<Esc>', true, false, true), 'x', false)
+    -- Show prompt with captured range
+    vim.schedule(function()
+      M.show_cursor_prompt(start_line, end_line)
+    end)
   end, { desc = "Show Cursor prompt with selection" })
   vim.keymap.set("n", M.config.leader_key .. "oC", M.open_cursor_agent, { desc = "Open Cursor agent in split" })
 end
