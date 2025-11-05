@@ -153,6 +153,22 @@ local function on_cursor_agent_exit(job_id, exit_code, event)
   end
 end
 
+---Create a right-hand vertical split for the Cursor agent terminal
+---@return number term_buf, number term_win
+local function open_cursor_agent_split()
+  local term_buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_option(term_buf, "bufhidden", "wipe")
+
+  vim.cmd("botright vsplit")
+  local term_win = vim.api.nvim_get_current_win()
+  vim.api.nvim_win_set_buf(term_win, term_buf)
+  vim.api.nvim_set_current_buf(term_buf)
+  vim.api.nvim_win_set_option(term_win, "number", false)
+  vim.api.nvim_win_set_option(term_win, "relativenumber", false)
+
+  return term_buf, term_win
+end
+
 ---Completion function for context placeholders
 ---Must be a global variable for use with vim.ui.input
 ---@param ArgLead string The text being completed
@@ -216,29 +232,19 @@ M.prompt = function(prompt, start_line, end_line)
     -- Reuse existing window
     vim.api.nvim_set_current_win(existing_win)
     local buf = vim.api.nvim_win_get_buf(existing_win)
-    
+
     -- Send the new prompt to the existing terminal
     vim.api.nvim_chan_send(vim.api.nvim_buf_get_var(buf, "terminal_job_id"), rendered_prompt .. "\r")
     vim.cmd("startinsert")
   else
-    -- Open a new terminal buffer and run cursor agent
-    local term_buf = vim.api.nvim_create_buf(false, true)
-    local term_win = vim.api.nvim_open_win(term_buf, true, {
-      relative = "editor",
-      row = 0,
-      col = math.floor(vim.o.columns / 2),
-      width = math.floor(vim.o.columns / 2),
-      height = vim.o.lines,
-      border = "rounded",
-      title = "Cursor Agent",
-      title_pos = "center",
-    })
-    
+    local term_buf, term_win = open_cursor_agent_split()
+    vim.api.nvim_set_current_win(term_win)
+
     -- Start cursor agent with the prompt and exit callback
     vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(rendered_prompt), {
       on_exit = on_cursor_agent_exit
     })
-    
+
     -- Auto-focus on window enter: enter insert mode when switching to this window
     vim.api.nvim_create_autocmd("WinEnter", {
       buffer = term_buf,
@@ -250,7 +256,7 @@ M.prompt = function(prompt, start_line, end_line)
       end,
       desc = "Auto-focus cursor agent input on window enter",
     })
-    
+
     vim.cmd("startinsert")
   end
 end
@@ -265,23 +271,22 @@ end
 
 ---Open cursor agent in split window
 M.open_cursor_agent = function()
-  local term_buf = vim.api.nvim_create_buf(false, true)
-  local term_win = vim.api.nvim_open_win(term_buf, true, {
-    relative = "editor",
-    row = 0,
-    col = math.floor(vim.o.columns / 2),
-    width = math.floor(vim.o.columns / 2),
-    height = vim.o.lines,
-    border = "rounded",
-    title = "Cursor Agent",
-    title_pos = "center",
-  })
-  
+  local existing_win = find_cursor_agent_window()
+
+  if existing_win then
+    vim.api.nvim_set_current_win(existing_win)
+    vim.cmd("startinsert")
+    return
+  end
+
+  local term_buf, term_win = open_cursor_agent_split()
+  vim.api.nvim_set_current_win(term_win)
+
   -- Start cursor agent with exit callback
   vim.fn.termopen(M.config.cursor_cmd .. " agent", {
     on_exit = on_cursor_agent_exit
   })
-  
+
   -- Auto-focus on window enter: enter insert mode when switching to this window
   vim.api.nvim_create_autocmd("WinEnter", {
     buffer = term_buf,
@@ -293,7 +298,7 @@ M.open_cursor_agent = function()
     end,
     desc = "Auto-focus cursor agent input on window enter",
   })
-  
+
   vim.cmd("startinsert")
 end
 
