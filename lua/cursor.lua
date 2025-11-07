@@ -234,16 +234,23 @@ M.prompt = function(prompt, start_line, end_line)
     local buf = vim.api.nvim_win_get_buf(existing_win)
 
     -- Send the new prompt to the existing terminal
-    vim.api.nvim_chan_send(vim.api.nvim_buf_get_var(buf, "terminal_job_id"), rendered_prompt .. "\r")
+    vim.api.nvim_chan_send(vim.api.nvim_buf_get_var(buf, "terminal_job_id"), rendered_prompt .. "\n")
     vim.cmd("startinsert")
   else
     local term_buf, term_win = open_cursor_agent_split()
     vim.api.nvim_set_current_win(term_win)
 
-    -- Start cursor agent with the prompt and exit callback
-    vim.fn.termopen(M.config.cursor_cmd .. " agent " .. vim.fn.shellescape(rendered_prompt), {
+    -- Start cursor agent and exit callback
+    local job_id = vim.fn.termopen(M.config.cursor_cmd .. " agent", {
       on_exit = on_cursor_agent_exit
     })
+
+    -- Wait a brief moment for the agent to initialize, then send the prompt
+    vim.defer_fn(function()
+      if vim.api.nvim_buf_is_valid(term_buf) then
+        vim.api.nvim_chan_send(job_id, rendered_prompt .. "\n")
+      end
+    end, 100)
 
     -- Auto-focus on window enter: enter insert mode when switching to this window
     vim.api.nvim_create_autocmd("WinEnter", {
